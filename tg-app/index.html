@@ -1,37 +1,495 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Трекер привычек</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      background: var(--tg-theme-bg-color, #1c1c1e);
-      color: var(--tg-theme-text-color, #ffffff);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      text-align: center;
-      padding: 24px;
-      box-sizing: border-box;
-    }
-    .icon { font-size: 64px; margin-bottom: 16px; }
-    h1 { font-size: 22px; margin: 0 0 8px; }
-    p  { font-size: 15px; margin: 0; opacity: 0.6; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Трекер привычек</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #F5F7FA;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 16px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Затемнение фона для оффера */
+        .offer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+            padding: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Карточка оффера */
+        .offer-card {
+            background-color: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .offer-emoji {
+            font-size: 64px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .offer-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #000;
+            line-height: 1.3;
+        }
+
+        .offer-subtitle {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .offer-benefits {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .offer-benefits li {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .offer-benefits li::before {
+            content: "✔️";
+            font-size: 16px;
+            color: #2AABEE;
+            flex-shrink: 0;
+        }
+
+        .offer-button {
+            width: 100%;
+            background-color: #2AABEE;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: background-color 0.2s;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .offer-button:active {
+            background-color: #1f8fc9;
+        }
+
+        .offer-skip {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 8px;
+        }
+
+        .offer-skip:active {
+            color: #666;
+        }
+
+        /* Основной экран трекера */
+        .tracker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+
+        .tracker-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .streak-badge {
+            background-color: #FFE87C;
+            padding: 8px 12px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .streak-badge::before {
+            content: "🔥";
+            font-size: 16px;
+        }
+
+        /* Карточка привычки */
+        .habit-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.1s, box-shadow 0.2s;
+            animation: cardAppear 0.3s ease;
+        }
+
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .habit-card:active {
+            transform: scale(0.99);
+        }
+
+        .habit-info {
+            flex: 1;
+        }
+
+        .habit-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .habit-meta {
+            font-size: 13px;
+            color: #8E8E93;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .habit-category {
+            background-color: #F0F0F0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .habit-streak {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #FF9500;
+        }
+
+        .habit-streak::before {
+            content: "🔥";
+            font-size: 12px;
+        }
+
+        .habit-button {
+            background-color: #34C759;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .habit-button:active {
+            background-color: #2bb14c;
+            transform: scale(0.95);
+        }
+
+        .habit-button.completed {
+            background-color: #8E8E93;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Прогресс-бар */
+        .progress-section {
+            margin-top: 24px;
+            padding: 16px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background-color: #F0F0F0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #34C759;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Тёмная тема */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1C1C1E;
+            }
+            .habit-card, .progress-section, .offer-card {
+                background-color: #2C2C2E;
+            }
+            .tracker-title, .habit-name {
+                color: #FFF;
+            }
+            .habit-meta {
+                color: #98989D;
+            }
+            .offer-title {
+                color: #FFF;
+            }
+            .offer-subtitle {
+                color: #98989D;
+            }
+            .offer-benefits li {
+                color: #FFF;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="icon">✅</div>
-  <h1>Трекер привычек</h1>
-  <p>Скоро здесь будет приложение</p>
-  <script>
-    window.Telegram.WebApp.ready();
-    window.Telegram.WebApp.expand();
-  </script>
+    <div class="app-container" id="appContainer">
+        <!-- Содержимое вставляется через JavaScript -->
+    </div>
+
+    <script>
+        (function() {
+            const defaultHabits = [
+                { id: 1, name: 'Выпить 8 стаканов воды', emoji: '💧', category: 'Здоровье', streak: 0, completed: false },
+                { id: 2, name: 'Медитация 10 минут', emoji: '🧘', category: 'Осознанность', streak: 0, completed: false },
+                { id: 3, name: 'Зарядка / Растяжка', emoji: '🤸', category: 'Фитнес', streak: 0, completed: false },
+                { id: 4, name: 'Читать 20 страниц', emoji: '📖', category: 'Развитие', streak: 0, completed: false },
+                { id: 5, name: 'Ложиться спать до 23:00', emoji: '🌙', category: 'Сон', streak: 0, completed: false },
+                { id: 6, name: 'Прогулка 30 минут', emoji: '🌳', category: 'Активность', streak: 0, completed: false }
+            ];
+
+            let habits = [];
+            try {
+                const savedHabits = localStorage.getItem('habits');
+                habits = savedHabits ? JSON.parse(savedHabits) : [...defaultHabits];
+            } catch (e) {
+                habits = [...defaultHabits];
+            }
+
+            const appContainer = document.getElementById('appContainer');
+
+            function saveHabits() {
+                try {
+                    localStorage.setItem('habits', JSON.stringify(habits));
+                } catch (e) {}
+            }
+
+            function updateProgress() {
+                const done = habits.filter(h => h.completed).length;
+                const total = habits.length;
+                const fill = document.querySelector('.progress-bar-fill');
+                const count = document.querySelector('.progress-count');
+                if (fill) fill.style.width = `${(done / total) * 100}%`;
+                if (count) count.textContent = `${done}/${total}`;
+            }
+
+            function renderTracker() {
+                const done = habits.filter(h => h.completed).length;
+                const total = habits.length;
+                const totalStreak = habits.reduce((sum, h) => sum + h.streak, 0);
+
+                appContainer.innerHTML = `
+                    <div class="tracker-header">
+                        <h1 class="tracker-title">Мои привычки</h1>
+                        <div class="streak-badge">${totalStreak}</div>
+                    </div>
+                    <div class="habits-list">
+                        ${habits.map(h => `
+                            <div class="habit-card" data-id="${h.id}">
+                                <div class="habit-info">
+                                    <div class="habit-name">${h.emoji} ${h.name}</div>
+                                    <div class="habit-meta">
+                                        <span class="habit-category">${h.category}</span>
+                                        <span class="habit-streak">${h.streak} дней</span>
+                                    </div>
+                                </div>
+                                <button class="habit-button ${h.completed ? 'completed' : ''}"
+                                        onclick="window.completeHabit(${h.id})"
+                                        ${h.completed ? 'disabled' : ''}>
+                                    ${h.completed ? 'Готово ✓' : 'Готово'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span>Прогресс дня</span>
+                            <span class="progress-count">${done}/${total}</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" style="width:${(done / total) * 100}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            window.completeHabit = function(habitId) {
+                const habit = habits.find(h => h.id === habitId);
+                if (!habit || habit.completed) return;
+
+                habit.completed = true;
+                habit.streak += 1;
+
+                const btn = document.querySelector(`[data-id="${habitId}"] .habit-button`);
+                if (btn) {
+                    btn.classList.add('completed');
+                    btn.disabled = true;
+                    btn.textContent = 'Готово ✓';
+                }
+
+                saveHabits();
+                updateProgress();
+
+                if (habits.every(h => h.completed)) {
+                    setTimeout(() => alert('🎉 Все привычки на сегодня выполнены!'), 300);
+                }
+            };
+
+            function renderOffer() {
+                // ЗАМЕНИТЕ на username вашего бота, когда он будет создан
+                const BOT_USERNAME = 'moytracker_bot';
+
+                appContainer.innerHTML = `
+                    <div class="offer-overlay" id="offerOverlay">
+                        <div class="offer-card">
+                            <div class="offer-emoji">🎯</div>
+                            <h2 class="offer-title">Трекер привычек</h2>
+                            <p class="offer-subtitle">Подпишитесь на бота — получайте напоминания и следите за прогрессом</p>
+                            <ul class="offer-benefits">
+                                <li>Напомним о привычках в нужное время</li>
+                                <li>Статистика и серии выполнения</li>
+                                <li>Ваш прогресс сохраняется</li>
+                            </ul>
+                            <a href="https://t.me/${BOT_USERNAME}?start=from_app" class="offer-button">
+                                Подписаться на бота
+                            </a>
+                            <div class="offer-skip" onclick="window.closeOffer()">Пропустить</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            window.closeOffer = function() {
+                const overlay = document.getElementById('offerOverlay');
+                if (!overlay) return;
+                overlay.style.opacity = '0';
+                overlay.style.transition = 'opacity 0.2s';
+                setTimeout(() => {
+                    try { localStorage.setItem('offerShown', 'true'); } catch (e) {}
+                    renderTracker();
+                }, 200);
+            };
+
+            // Инициализация Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+            }
+
+            try {
+                localStorage.getItem('offerShown') ? renderTracker() : renderOffer();
+            } catch (e) {
+                renderTracker();
+            }
+        })();
+    </script>
 </body>
 </html>
