@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Мобильный вьюпорт: viewport-fit=cover нужен для safe area на iPhone -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2AABEE" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Трекер привычек</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     Корневой контейнер приложения
+     ═══════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ── СПЛЭШ-ЭКРАН ──────────────────────── -->
+  <div id="screen-splash" class="screen">
+    <div class="splash-icon">✅</div>
+    <div class="splash-title">Трекер привычек</div>
+  </div>
+
+  <!-- ── ОНБОРДИНГ ────────────────────────── -->
+  <div id="screen-onboarding" class="screen hidden">
+
+    <!-- Шаг 1: Добро пожаловать -->
+    <div id="ob-step-1" class="onboarding-step active">
+      <div class="ob-welcome">
+        <div class="ob-illustration">🌱</div>
+        <div class="ob-title">Маленькие привычки&nbsp;— большие перемены</div>
+        <div class="ob-subtitle">Отмечай каждый день. Смотри, как растёт серия. Становись лучше.</div>
+      </div>
+      <div class="ob-dots">
+        <div class="ob-dot active" id="ob-dot-0"></div>
+        <div class="ob-dot" id="ob-dot-1"></div>
+        <div class="ob-dot" id="ob-dot-2"></div>
+      </div>
+      <button class="btn-primary" id="ob-btn-1" onclick="App.obNext(1)">Начать</button>
+    </div>
+
+    <!-- Шаг 2: Выбор привычек -->
+    <div id="ob-step-2" class="onboarding-step">
+      <div class="ob-step2-title">С чего начнём?</div>
+      <div class="ob-step2-sub">Выбери 1–3 привычки. Потом добавишь ещё.</div>
+      <!-- Сетка шаблонов — рендерится через JS -->
+      <div class="template-grid" id="template-grid"></div>
+      <div class="ob-dots">
+        <div class="ob-dot" id="ob-dot-0b"></div>
+        <div class="ob-dot active" id="ob-dot-1b"></div>
+        <div class="ob-dot" id="ob-dot-2b"></div>
+      </div>
+      <button class="btn-primary" id="ob-btn-2" onclick="App.obNext(2)" disabled>Продолжить</button>
+    </div>
+
+    <!-- Шаг 3: Напоминание -->
+    <div id="ob-step-3" class="onboarding-step">
+      <div class="ob-reminder-icon">🔔</div>
+      <div class="ob-reminder-title">Когда напомнить?</div>
+      <div class="ob-reminder-sub">Бот напишет тебе в нужное время</div>
+      <div class="reminder-options" id="reminder-options">
+        <div class="reminder-option selected" data-value="morning" onclick="App.selectReminder('morning')">
+          <span class="reminder-option-icon">🌅</span>
+          <span class="reminder-option-label">Утром</span>
+          <span class="reminder-option-time">08:00</span>
+          <span class="reminder-option-check">✓</span>
+        </div>
+        <div class="reminder-option" data-value="evening" onclick="App.selectReminder('evening')">
+          <span class="reminder-option-icon">🌙</span>
+          <span class="reminder-option-label">Вечером</span>
+          <span class="reminder-option-time">21:00</span>
+          <span class="reminder-option-check">✓</span>
+        </div>
+        <div class="reminder-option" data-value="both" onclick="App.selectReminder('both')">
+          <span class="reminder-option-icon">🔁</span>
+          <span class="reminder-option-label">Утром и вечером</span>
+          <span class="reminder-option-time">08:00 · 21:00</span>
+          <span class="reminder-option-check">✓</span>
+        </div>
+        <div class="reminder-option" data-value="none" onclick="App.selectReminder('none')">
+          <span class="reminder-option-icon">🔕</span>
+          <span class="reminder-option-label">Не нужно</span>
+          <span class="reminder-option-time"></span>
+          <span class="reminder-option-check">✓</span>
+        </div>
+      </div>
+      <div class="ob-dots" style="margin-top:auto; padding-top:16px;">
+        <div class="ob-dot" id="ob-dot-0c"></div>
+        <div class="ob-dot" id="ob-dot-1c"></div>
+        <div class="ob-dot active" id="ob-dot-2c"></div>
+      </div>
+      <button class="btn-primary" id="ob-btn-3" onclick="App.obFinish()">Готово! 🎉</button>
+    </div>
+
+  </div><!-- /screen-onboarding -->
+
+  <!-- ── ГЛАВНОЕ ПРИЛОЖЕНИЕ (табы) ─────────── -->
+  <div id="screen-app" class="screen hidden">
+
+    <!-- Контент вкладок -->
+    <div class="app-content">
+
+      <!-- Вкладка: Сегодня -->
+      <div id="tab-today" class="tab-pane active">
+        <!-- Шапка -->
+        <div class="today-header">
+          <div class="today-top-row">
+            <div class="today-date" id="today-date">—</div>
+            <div class="streak-badge" id="global-streak-badge">
+              <span class="streak-badge-icon">🔥</span>
+              <span class="streak-badge-num" id="global-streak-num">0</span>
+              <span class="streak-badge-label">дн</span>
+            </div>
+          </div>
+          <div class="day-progress" id="day-progress-block">
+            <div class="day-progress-row">
+              <span class="day-progress-label" id="progress-label">Выполнено</span>
+              <span class="day-progress-count" id="progress-count">0 из 0</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Список привычек (динамически) -->
+        <div class="habits-list" id="habits-list"></div>
+
+        <!-- FAB: добавить привычку -->
+        <button class="fab" id="fab-add" onclick="App.showAddHabit()" title="Добавить привычку">+</button>
+      </div><!-- /tab-today -->
+
+      <!-- Вкладка: Прогресс -->
+      <div id="tab-progress" class="tab-pane">
+        <div class="tab-title">Прогресс</div>
+        <div class="progress-scroll" id="progress-content">
+          <!-- Заполняется через JS -->
+        </div>
+      </div>
+
+      <!-- Вкладка: Настройки -->
+      <div id="tab-settings" class="tab-pane">
+        <div class="tab-title">Настройки</div>
+        <div class="settings-scroll" id="settings-content">
+          <!-- Заполняется через JS -->
+        </div>
+      </div>
+
+    </div><!-- /app-content -->
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" id="nav-today" onclick="App.switchTab('today')">
+        <span class="nav-icon">☑️</span>
+        <span class="nav-label">Сегодня</span>
+      </button>
+      <button class="nav-item" id="nav-progress" onclick="App.switchTab('progress')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Прогресс</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="App.switchTab('settings')">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Настройки</span>
+      </button>
+    </nav>
+
+  </div><!-- /screen-app -->
+
+  <!-- ── МОДАЛЬНЫЙ ЭКРАН: ДОБАВИТЬ ПРИВЫЧКУ ── -->
+  <div id="screen-add-habit" class="screen-modal">
+    <div class="screen-header">
+      <button class="btn-back" onclick="App.closeModal()" title="Назад">‹</button>
+      <span class="screen-header-title" id="add-habit-title">Новая привычка</span>
+      <div style="width:44px"></div>
+    </div>
+    <div class="add-habit-scroll" id="add-habit-form">
+      <!-- Заполняется через JS -->
+    </div>
+  </div>
+
+  <!-- ── МОДАЛЬНЫЙ ЭКРАН: ДЕТАЛИ ПРИВЫЧКИ ─── -->
+  <div id="screen-habit-detail" class="screen-modal">
+    <div class="screen-header">
+      <button class="btn-back" onclick="App.closeModal()" title="Назад">‹</button>
+      <span class="screen-header-title" id="detail-title">Привычка</span>
+      <button class="btn-header-action" id="detail-edit-btn" title="Редактировать">✏️</button>
+    </div>
+    <div class="detail-scroll" id="detail-content">
+      <!-- Заполняется через JS -->
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ── ОВЕРЛЕЙ: ВСЕ ВЫПОЛНЕНО ────────────── -->
+<div id="overlay-done" onclick="App.closeDoneOverlay()">
+  <div id="confetti-container" class="confetti-container"></div>
+  <div class="done-card" onclick="event.stopPropagation()">
+    <span class="done-emoji">🎉</span>
+    <div class="done-title">Отличный день!</div>
+    <div class="done-subtitle">Все привычки выполнены. Так держать!</div>
+    <div class="done-streak" id="done-streak-text">🔥 Серия: 1 день</div>
+  </div>
+</div>
+
+<!-- ── ОВЕРЛЕЙ: КОНТЕКСТНОЕ МЕНЮ ─────────── -->
+<div id="overlay-context" onclick="App.closeContextMenu()">
+  <div class="context-sheet" onclick="event.stopPropagation()">
+    <div class="context-handle"></div>
+    <div class="context-habit-name" id="context-habit-name">Привычка</div>
+    <div class="context-action" onclick="App.contextEdit()">
+      <span class="context-action-icon">✏️</span>
+      <span class="context-action-label">Редактировать</span>
+    </div>
+    <div class="context-action" onclick="App.contextSkip()">
+      <span class="context-action-icon">⏭️</span>
+      <span class="context-action-label">Пропустить сегодня</span>
+    </div>
+    <div class="context-action danger" onclick="App.contextDelete()">
+      <span class="context-action-icon">🗑️</span>
+      <span class="context-action-label">Удалить привычку</span>
+    </div>
+    <div class="context-cancel" onclick="App.closeContextMenu()">Отмена</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     Скрипты — порядок важен:
+     1. SDK (нужен до app.js)
+     2. Хранилище данных
+     3. Основная логика приложения
+     ═══════════════════════════════════════════ -->
+<script src="MAX-web-app.js"></script>
+<script src="storage.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

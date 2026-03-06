@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-accent: #10b981;
+  --color-streak: #f59e0b;
+}
+
+body {
+  @apply bg-linear-to-br from-[#f0fdf4] to-[#ecfdf5] dark:from-stone-950 dark:to-stone-900 min-h-screen transition-colors duration-300;
+}
